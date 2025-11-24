@@ -19,15 +19,16 @@ const ignorePatterns = [
   "android/build",
   "android/.gradle",
   "android/.kotlin",
+  "android/app/.cxx",
+  "android/app/build",
 ];
 
 /**
  * 특정 폴더를 zip에 재귀적으로 추가
  * @param zipFolder : zip 파일 내부의 위치
  * @param folderPath : 원본 폴더 경로
- * @param zipFolderPath : zip 안에서 이 폴더가 어떤 경로로 들어갈지 문자열로 기록하는 용도
  */
-function addFolderToZip(zipFolder, folderPath, zipFolderPath = "") {
+function addFolderToZip(zipFolder, folderPath) {
   const entries = fs.readdirSync(folderPath, { withFileTypes: true }); // 안에 있는 파일과 폴더 목록을 가져옴
 
   for (const entry of entries) {
@@ -40,15 +41,13 @@ function addFolderToZip(zipFolder, folderPath, zipFolderPath = "") {
 
     if (shouldIgnore) continue;
 
-    const zipPath = path.posix.join(zipFolderPath, entry.name); // 압축 파일 경로
-
     // 폴더인 경우 재귀적으로 추가
     if (entry.isDirectory()) {
       const childZipFolder = zipFolder.folder(entry.name);
-      addFolderToZip(childZipFolder, fullPath, zipPath);
+      addFolderToZip(childZipFolder, fullPath);
     } else {
       const fileData = fs.readFileSync(fullPath);
-      zipFolder.file(zipPath, fileData);
+      zipFolder.file(entry.name, fileData);
     }
   }
 }
