@@ -9,6 +9,19 @@ function App() {
 
   /* TODO: 웹뷰 변하는 부분은 이곳에서 관리해야 함 (여기 설명 뭐라고 적지) */
   const [webviewUri, setWebviewUri] = useState("");
+  const [extraHostInput, setExtraHostInput] = useState("");
+  const [extraHosts, setExtraHosts] = useState([]);
+
+  const handleAddHost = () => {
+    const value = extraHostInput.trim();
+    if (!value) return;
+    if (extraHosts.includes(value)) {
+      setExtraHostInput("");
+      return;
+    }
+    setExtraHosts([...extraHosts, value]);
+    setExtraHostInput("");
+  };
 
   /* 템플릿 다운로드 */
   const downloadTemplate = async () => {
@@ -41,6 +54,15 @@ function App() {
 
       // 5-1. WEBVIEW_URI 플레이스홀더 치환
       let replacedContent = originalContent.replace("__WEBVIEW_URI__", webviewUri);
+
+      // 5-2. ALLOW_HOSTS 내 추가 도메인 치환
+      if (extraHosts.length > 0) {
+        const SENTINEL = " // __EXTRA_ALLOW_HOSTS__";
+        const extraHostLines = extraHosts.map((host) => `  '${host}',`).join("\n");
+
+        // 토큰을 "도메인 목록 + 다시 토큰" 으로 교체해서 다음에도 재사용 가능하게
+        replacedContent = replacedContent.replace(SENTINEL, `${extraHostLines}\n${SENTINEL}`);
+      }
 
       // 6. 수정된 내용으로 다시 파일 덮어쓰기
       zip.file(webviewConfigPath, replacedContent);
@@ -83,6 +105,36 @@ function App() {
                 onChange={(e) => setWebviewUri(e.target.value)}
                 className="form-input"
               />
+            </div>
+
+            {/* 추가 허용 도메인 (ALLOW_HOSTS 용) */}
+            <div className="form-field">
+              <label className="form-label">
+                추가 허용 도메인 (웹뷰에서 외부 도메인 접근 허용)
+              </label>
+              <div className="form-inline">
+                <input
+                  type="text"
+                  placeholder="예) www.example.com"
+                  value={extraHostInput}
+                  onChange={(e) => setExtraHostInput(e.target.value)}
+                  className="form-input"
+                  onKeyDown={(e) => e.key === "Enter" && handleAddHost()}
+                />
+                <button type="button" onClick={handleAddHost} className="form-inline-button">
+                  추가
+                </button>
+              </div>
+
+              {extraHosts.length > 0 && (
+                <ul className="tag-list">
+                  {extraHosts.map((host) => (
+                    <li key={host} className="tag-pill">
+                      {host}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </section>
