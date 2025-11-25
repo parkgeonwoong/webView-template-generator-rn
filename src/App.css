@@ -131,6 +131,7 @@ body,
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-bottom: 10px;
 }
 
 .form-label {
@@ -216,4 +217,23 @@ body,
   border-radius: 999px;
   background: #f3f4f6;
   color: #374151;
+}
+
+/* WebView 디버깅 모드 */
+.debug-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.debug-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.debug-checkbox-label {
+  font-size: 13px;
+  color: #4b5563;
 }

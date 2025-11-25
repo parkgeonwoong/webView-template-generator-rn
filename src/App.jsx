@@ -7,10 +7,12 @@ import "./App.css";
 function App() {
   const [isDownloading, setIsDownloading] = useState(false);
 
-  /* TODO: 웹뷰 변하는 부분은 이곳에서 관리해야 함 (여기 설명 뭐라고 적지) */
-  const [webviewUri, setWebviewUri] = useState("");
-  const [extraHostInput, setExtraHostInput] = useState("");
-  const [extraHosts, setExtraHosts] = useState([]);
+  /* 웹 제너레이터에서 웹뷰 관련 옵션들(URI, 허용 도메인, 디버깅 여부, 권한 안내 화면 여부) */
+  const [webviewUri, setWebviewUri] = useState(""); // 웹뷰 URL
+  const [extraHostInput, setExtraHostInput] = useState(""); // 추가 허용 도메인 입력
+  const [extraHosts, setExtraHosts] = useState([]); // 추가 허용 도메인 목록
+  const [enableDebug, setEnableDebug] = useState(false); // 디버깅 여부
+  const [usePermissionGuide, setUsePermissionGuide] = useState(false); // 권한 안내 화면 여부
 
   const handleAddHost = () => {
     const value = extraHostInput.trim();
@@ -33,27 +35,28 @@ function App() {
       // 1. public 폴더의 템플릿 가져오기
       const response = await fetch("/templates/rnBaseTemplate.zip");
       const arrayBuffer = await response.arrayBuffer(); // arrayBuffer 생성
-      // const blob = await response.blob();
 
       // 2. JSZip 으로 ZIP 열기
       const zip = await JSZip.loadAsync(arrayBuffer);
-      console.log("🚀 ~ downloadTemplate ~ zip:", zip);
 
       // 3. RN 템플릿 안의 웹뷰 설정 파일 경로
       const webviewConfigPath = "rnBaseTemplate/src/config/webview.ts";
 
-      const file = zip.file(webviewConfigPath);
-      if (!file) {
+      const configFile = zip.file(webviewConfigPath);
+      if (!configFile) {
         console.error("ZIP 안에서 파일을 찾을 수 없습니다:", webviewConfigPath);
         alert("템플릿 내부 파일을 찾지 못했습니다.");
         return;
       }
 
       // 4. 원본 파일 내용 읽기
-      const originalContent = await file.async("string");
+      const originalContent = await configFile.async("string");
 
       // 5-1. WEBVIEW_URI 플레이스홀더 치환
-      let replacedContent = originalContent.replace("__WEBVIEW_URI__", webviewUri);
+      let replacedContent = originalContent
+        .replace("__WEBVIEW_URI__", webviewUri)
+        .replace("__WEBVIEW_DEBUGGING_ENABLED__", enableDebug ? "true" : "false")
+        .replace("__USE_PERMISSION_GUIDE__", usePermissionGuide ? "true" : "false");
 
       // 5-2. ALLOW_HOSTS 내 추가 도메인 치환
       if (extraHosts.length > 0) {
@@ -67,7 +70,27 @@ function App() {
       // 6. 수정된 내용으로 다시 파일 덮어쓰기
       zip.file(webviewConfigPath, replacedContent);
 
-      // 7. 수정된 zip 생성
+      // // 7. package.json 파일 수정 TODO: 고민해보기
+      // const packagePath = "rnBaseTemplate/package.json";
+      // const packageFile = zip.file(packagePath); // 파일 읽기
+
+      // if (packageFile) {
+      //   const packageContent = await packageFile.async("string"); // 실제 텍스트 내용
+      //   const packageJson = JSON.parse(packageContent);
+
+      //   // 권한안내 화면 옵션
+      //   if (usePermissionGuide) {
+      //     packageJson.dependencies["@react-native-async-storage/async-storage"] = "^1.24.0";
+      //   } else {
+      //     // TODO: 삭제 하는게 맞나?
+      //     delete packageJson.dependencies["@react-native-async-storage/async-storage"];
+      //   }
+
+      //   const newPackageContent = JSON.stringify(packageJson, null, 2);
+      //   zip.file(packagePath, newPackageContent);
+      // }
+
+      // 8. 수정된 zip 생성
       const newZipBlob = await zip.generateAsync({ type: "blob" });
 
       // 다운로드
@@ -95,7 +118,7 @@ function App() {
           </p>
 
           <div className="category-body">
-            {/* 공통 필드 스타일 사용 */}
+            {/* 웹뷰 URL */}
             <div className="form-field">
               <label className="form-label">웹뷰 URL</label>
               <input
@@ -135,6 +158,41 @@ function App() {
                   ))}
                 </ul>
               )}
+            </div>
+
+            {/* WebView 디버깅 모드 */}
+            <div className="form-field">
+              <label className="form-label">WebView 디버깅</label>
+              <div className="debug-checkbox-row">
+                <input
+                  id="debug-checkbox"
+                  type="checkbox"
+                  checked={enableDebug}
+                  onChange={(e) => setEnableDebug(e.target.checked)}
+                  className="debug-checkbox"
+                />
+                <label htmlFor="debug-checkbox" className="debug-checkbox-label">
+                  Chrome Inspector, Safari 등 디버깅 도구에서 WebView 콘솔/네트워크를 확인할 수 있게
+                  합니다.
+                </label>
+              </div>
+            </div>
+
+            {/* 앱 최초 실행 시 권한 안내 화면 */}
+            <div className="form-field">
+              <label className="form-label">앱 실행 시 권한 안내 화면</label>
+              <div className="debug-checkbox-row">
+                <input
+                  id="permission-guide-checkbox"
+                  type="checkbox"
+                  checked={usePermissionGuide}
+                  onChange={(e) => setUsePermissionGuide(e.target.checked)}
+                  className="debug-checkbox"
+                />
+                <label htmlFor="permission-guide-checkbox" className="debug-checkbox-label">
+                  첫 실행 시 카메라/갤러리 등 앱 권한 안내 화면을 한 번 보여줍니다.
+                </label>
+              </div>
             </div>
           </div>
         </section>
