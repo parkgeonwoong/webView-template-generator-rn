@@ -2,7 +2,7 @@ import { useState } from "react";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
 
-import "./App.css";
+import "./styles/App.css";
 
 import WebviewSettingsSection from "./components/WebviewSettingsSection";
 import DownloadInstructions from "./components/DownloadInstructions";
@@ -134,6 +134,11 @@ function App() {
     setExtraHostInput("");
   };
 
+  /* 추가 허용 도메인 삭제 */
+  const handleRemoveHost = (hostToRemove) => {
+    setExtraHosts((prev) => prev.filter((host) => host !== hostToRemove));
+  };
+
   /* 템플릿 ZIP 생성 & 다운로드 */
   const downloadTemplate = async () => {
     // TODO: 예외처리
@@ -173,6 +178,8 @@ function App() {
       <div className="App">
         <h1 className="app-title">React Native Webview 템플릿 생성기</h1>
 
+        {/* TODO: 앱 메타데이터? */}
+
         {/* 웹뷰 관련 카테고리 카드 */}
         <WebviewSettingsSection
           webviewUri={webviewUri}
@@ -180,11 +187,13 @@ function App() {
           extraHostInput={extraHostInput}
           onChangeExtraHostInput={setExtraHostInput}
           onAddHost={handleAddHost}
+          onRemoveHost={handleRemoveHost}
           extraHosts={extraHosts}
           enableDebug={enableDebug}
           onChangeEnableDebug={setEnableDebug}
         />
 
+        {/* 앱 권한 설정 카드 */}
         <section className="category-card">
           <h2 className="category-title">앱 권한 설정</h2>
           <p className="category-description">{/* TODO: 설명 */}앱 권한 관련 옵션을 설정합니다.</p>
@@ -209,7 +218,7 @@ function App() {
           </div>
         </section>
 
-        {/* TODO: 템플릿 생성(다운로드) 버튼 */}
+        {/* 템플릿 생성(다운로드) 버튼 */}
         <button onClick={downloadTemplate} disabled={isDownloading} className="download-button">
           {isDownloading ? "다운로드 중..." : "생성하기"}
         </button>

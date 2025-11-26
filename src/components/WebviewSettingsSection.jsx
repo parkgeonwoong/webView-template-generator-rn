@@ -5,6 +5,7 @@
  * @param extraHostInput - 추가 허용 도메인 입력
  * @param onChangeExtraHostInput - 추가 허용 도메인 변경 핸들러
  * @param onAddHost - 추가 허용 도메인 추가 핸들러
+ * @param onRemoveHost - 추가 허용 도메인 삭제 핸들러
  * @param extraHosts - 추가 허용 도메인 목록
  * @param enableDebug - 디버깅 여부
  * @param onChangeEnableDebug - 디버깅 여부 변경 핸들러
@@ -16,6 +17,7 @@ export default function WebviewSettingsSection({
   extraHostInput,
   onChangeExtraHostInput,
   onAddHost,
+  onRemoveHost,
   extraHosts,
   enableDebug,
   onChangeEnableDebug,
@@ -62,6 +64,13 @@ export default function WebviewSettingsSection({
               {extraHosts.map((host) => (
                 <li key={host} className="tag-pill">
                   {host}
+                  <button
+                    type="button"
+                    className="tag-pill-remove-button"
+                    onClick={() => onRemoveHost(host)}
+                  >
+                    x
+                  </button>
                 </li>
               ))}
             </ul>
