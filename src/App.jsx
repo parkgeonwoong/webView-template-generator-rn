@@ -14,6 +14,7 @@ function App() {
   const [enableDebug, setEnableDebug] = useState(false); // 디버깅 여부
   const [usePermissionGuide, setUsePermissionGuide] = useState(false); // 권한 안내 화면 여부
 
+  /* 추가 허용 도메인 추가 */
   const handleAddHost = () => {
     const value = extraHostInput.trim();
     if (!value) return;
@@ -39,7 +40,7 @@ function App() {
       // 2. JSZip 으로 ZIP 열기
       const zip = await JSZip.loadAsync(arrayBuffer);
 
-      // 3. RN 템플릿 안의 웹뷰 설정 파일 경로
+      // 3. [웹뷰] 설정 파일 경로
       const webviewConfigPath = "rnBaseTemplate/src/config/webview.ts";
 
       const configFile = zip.file(webviewConfigPath);
@@ -49,16 +50,16 @@ function App() {
         return;
       }
 
-      // 4. 원본 파일 내용 읽기
+      // 3-1. 원본 파일 내용 읽기
       const originalContent = await configFile.async("string");
 
-      // 5-1. WEBVIEW_URI 플레이스홀더 치환
+      // 3-2. WEBVIEW_URI 플레이스홀더 치환
       let replacedContent = originalContent
         .replace("__WEBVIEW_URI__", webviewUri)
         .replace("__WEBVIEW_DEBUGGING_ENABLED__", enableDebug ? "true" : "false")
         .replace("__USE_PERMISSION_GUIDE__", usePermissionGuide ? "true" : "false");
 
-      // 5-2. ALLOW_HOSTS 내 추가 도메인 치환
+      // 3-3. ALLOW_HOSTS 내 추가 도메인 치환
       if (extraHosts.length > 0) {
         const SENTINEL = " // __EXTRA_ALLOW_HOSTS__";
         const extraHostLines = extraHosts.map((host) => `  '${host}',`).join("\n");
@@ -67,30 +68,52 @@ function App() {
         replacedContent = replacedContent.replace(SENTINEL, `${extraHostLines}\n${SENTINEL}`);
       }
 
-      // 6. 수정된 내용으로 다시 파일 덮어쓰기
+      // 3-4. 수정된 내용으로 다시 파일 덮어쓰기
       zip.file(webviewConfigPath, replacedContent);
 
-      // // 7. package.json 파일 수정 TODO: 고민해보기
-      // const packagePath = "rnBaseTemplate/package.json";
-      // const packageFile = zip.file(packagePath); // 파일 읽기
+      // 3. [네비게이션] 설정 파일 경로
+      const stackWithPermissionPath = "rnBaseTemplate/src/navigations/Stack.with-permission.tsx";
+      const stackWithoutPermissionPath =
+        "rnBaseTemplate/src/navigations/Stack.without-permission.tsx";
+      const targetStackPath = "rnBaseTemplate/src/navigations/Stack.tsx";
 
-      // if (packageFile) {
-      //   const packageContent = await packageFile.async("string"); // 실제 텍스트 내용
-      //   const packageJson = JSON.parse(packageContent);
+      const chosenStackPath = usePermissionGuide
+        ? stackWithPermissionPath
+        : stackWithoutPermissionPath;
+      const chosenStackFile = zip.file(chosenStackPath);
 
-      //   // 권한안내 화면 옵션
-      //   if (usePermissionGuide) {
-      //     packageJson.dependencies["@react-native-async-storage/async-storage"] = "^1.24.0";
-      //   } else {
-      //     // TODO: 삭제 하는게 맞나?
-      //     delete packageJson.dependencies["@react-native-async-storage/async-storage"];
-      //   }
+      if (!chosenStackFile) {
+        console.error("ZIP 안에서 Stack 템플릿 파일을 찾을 수 없습니다:", chosenStackPath);
+        alert("템플릿 내부 Stack 네비게이션 파일을 찾지 못했습니다.");
+        return;
+      }
+      const chosenStackContent = await chosenStackFile.async("string");
 
-      //   const newPackageContent = JSON.stringify(packageJson, null, 2);
-      //   zip.file(packagePath, newPackageContent);
-      // }
+      // 최종 프로젝트에서는 항상 Stack.tsx 라는 이름으로 사용
+      zip.file(targetStackPath, chosenStackContent);
+      zip.remove(stackWithPermissionPath);
+      zip.remove(stackWithoutPermissionPath);
 
-      // 8. 수정된 zip 생성
+      // 4. package.json 파일 수정
+      const packagePath = "rnBaseTemplate/package.json";
+      const packageFile = zip.file(packagePath); // 파일 읽기
+
+      if (packageFile) {
+        const packageContent = await packageFile.async("string"); // 실제 텍스트 내용
+        const packageJson = JSON.parse(packageContent);
+
+        // 권한안내 화면 옵션
+        if (usePermissionGuide) {
+          packageJson.dependencies["@react-native-async-storage/async-storage"] = "^1.24.0";
+        } else {
+          delete packageJson.dependencies["@react-native-async-storage/async-storage"];
+        }
+
+        const newPackageContent = JSON.stringify(packageJson, null, 2);
+        zip.file(packagePath, newPackageContent);
+      }
+
+      // 5. 수정된 zip 생성
       const newZipBlob = await zip.generateAsync({ type: "blob" });
 
       // 다운로드
@@ -177,7 +200,14 @@ function App() {
                 </label>
               </div>
             </div>
+          </div>
+        </section>
 
+        <section className="category-card">
+          <h2 className="category-title">앱 권한 설정</h2>
+          <p className="category-description">{/* TODO: 설명 */}앱 권한 관련 옵션을 설정합니다.</p>
+
+          <div className="category-body">
             {/* 앱 최초 실행 시 권한 안내 화면 */}
             <div className="form-field">
               <label className="form-label">앱 실행 시 권한 안내 화면</label>

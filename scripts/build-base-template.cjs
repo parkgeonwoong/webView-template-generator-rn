@@ -53,7 +53,7 @@ function addFolderToZip(zipFolder, folderPath) {
 }
 
 async function main() {
-  console.log("rnBaseTemplate 폴더를 zip으로 생성 중...");
+  console.log(" ♻️ rnBaseTemplate 폴더를 zip으로 생성 중...");
 
   const zip = new JSZip();
   const rootZipFolder = zip.folder("rnBaseTemplate");
@@ -69,6 +69,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("템플릿 생성 실패", err);
+  console.error("❌ 템플릿 생성 실패", err);
   process.exit(1);
 });
