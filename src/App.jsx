@@ -6,6 +6,7 @@ import "./styles/App.css";
 
 import WebviewSettingsSection from "./components/WebviewSettingsSection";
 import DownloadInstructions from "./components/DownloadInstructions";
+import PermissionSelectorModal from "./components/modal/PermissionSelectorModal";
 
 // ----------------------
 // 템플릿 관련 상수 & 헬퍼
@@ -20,6 +21,81 @@ const STACK_WITH_PERMISSION_PATH = "rnBaseTemplate/src/navigations/Stack.with-pe
 const STACK_WITHOUT_PERMISSION_PATH = "rnBaseTemplate/src/navigations/Stack.without-permission.tsx";
 const TARGET_STACK_PATH = "rnBaseTemplate/src/navigations/Stack.tsx";
 const PACKAGE_JSON_PATH = "rnBaseTemplate/package.json";
+
+const MANIFEST_XML_PATH = "rnBaseTemplate/android/app/src/main/AndroidManifest.xml";
+const INFO_PLIST_PATH = "rnBaseTemplate/ios/rnBaseTemplate/Info.plist";
+const PODFILE_PATH = "rnBaseTemplate/ios/Podfile";
+
+const ANDROID_PERMISSION_SNIPPETS = {
+  camera: '    <uses-permission android:name="android.permission.CAMERA" />\n',
+  microphone: '    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n',
+  location: '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n',
+  photos:
+    '    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n' +
+    '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n',
+};
+
+const IOS_USAGE_DESCRIPTION_SNIPPETS = {
+  camera: `
+  <key>NSCameraUsageDescription</key>
+  <string>이 앱은 카메라 기능을 사용하기 위해 권한이 필요합니다.</string>
+`,
+  microphone: `
+  <key>NSMicrophoneUsageDescription</key>
+  <string>이 앱은 녹음 기능을 사용하기 위해 마이크 권한이 필요합니다.</string>
+`,
+  photos: `
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>이 앱은 사진을 불러오기 위해 사진 보관함 접근 권한이 필요합니다.</string>
+`,
+  location: `
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>이 앱은 위치 기반 서비스를 제공하기 위해 위치 정보가 필요합니다.</string>
+`,
+};
+
+const PODFILE_PERMISSION_KEYS = {
+  camera: "Camera",
+  microphone: "Microphone",
+  location: "LocationWhenInUse",
+  photos: "PhotoLibrary",
+};
+
+/* TODO: 권한 메타데이터 정의 */
+const PERMISSION_OPTIONS = [
+  {
+    id: "camera",
+    label: "카메라 접근 권한(선택)",
+    description: "프로필 촬영, 화상 통화 등을 위해 카메라 접근 권한이 필요합니다.",
+    category: "권한요청",
+  },
+  {
+    id: "microphone",
+    label: "마이크 접근 권한(선택)",
+    description: "음성 녹음, 통화 기능 등을 위해 마이크 접근 권한이 필요합니다.",
+    category: "권한요청",
+  },
+  {
+    id: "photos",
+    label: "사진/갤러리 접근 권한(선택)",
+    description: "사진 업로드를 위해 사진/미디어 접근 권한이 필요합니다.",
+    category: "권한요청",
+  },
+  {
+    id: "location",
+    label: "위치 접근 권한(선택)",
+    description: "주변 찾기, 지도 기능 등을 위해 위치 정보가 필요합니다.",
+    category: "권한요청",
+  },
+
+  // ⚠️ 앞으로 권한이 늘어나면 여기 배열에만 계속 추가하면 됨
+];
+
+// TODO: 권한 id → 메타데이터 빠른 조회용
+const PERMISSION_MAP = PERMISSION_OPTIONS.reduce((acc, item) => {
+  acc[item.id] = item;
+  return acc;
+}, {});
 
 /* 1. 기본 템플릿 ZIP 불러오기 */
 async function loadBaseTemplateZip() {
@@ -103,6 +179,55 @@ async function updatePackageJson(zip, { usePermissionGuide }) {
   zip.file(PACKAGE_JSON_PATH, newPackageContent);
 }
 
+/* 5. AndroidManifest.xml 파일 수정 */
+async function updateAndroidManifest(zip, { selectedScopes }) {
+  const file = zip.file(MANIFEST_XML_PATH);
+  if (!file) return;
+
+  let content = await file.async("string");
+  const marker = "<!-- __ANDROID_PERMISSION_DECLS__ -->";
+
+  const snippets = selectedScopes.map((scope) => ANDROID_PERMISSION_SNIPPETS[scope] || "").join("");
+
+  content = content.replace(marker, snippets.trimEnd());
+  zip.file(MANIFEST_XML_PATH, content);
+}
+
+/* 6. Info.plist 파일 수정 */
+async function updateInfoPlist(zip, { selectedScopes }) {
+  const file = zip.file(INFO_PLIST_PATH);
+  if (!file) return;
+
+  let content = await file.async("string");
+  const marker = "<!-- __IOS_PERMISSION_USAGE_DESCRIPTIONS__ -->";
+
+  const snippets = selectedScopes
+    .map((scope) => IOS_USAGE_DESCRIPTION_SNIPPETS[scope] || "")
+    .join("");
+
+  content = content.replace(marker, snippets.trim() + "\n");
+  zip.file(INFO_PLIST_PATH, content);
+}
+
+/* 7. Podfile 파일 수정 */
+async function updatePodfile(zip, { selectedScopes }) {
+  const file = zip.file(PODFILE_PATH);
+  if (!file) return;
+
+  let content = await file.async("string");
+  const marker = "<!-- __IOS_SETUP_PERMISSIONS__ -->";
+
+  const lines = selectedScopes
+    .map((scope) => PODFILE_PERMISSION_KEYS[scope])
+    .filter(Boolean)
+    .map((key) => `    '${key}',`)
+    .join("\n");
+
+  content = content.replace(marker, lines);
+
+  zip.file(PODFILE_PATH, content);
+}
+
 function App() {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -112,8 +237,9 @@ function App() {
   const [extraHosts, setExtraHosts] = useState([]); // 추가 허용 도메인 목록
   const [enableDebug, setEnableDebug] = useState(false); // 디버깅 여부
 
-  /* 권한 안내 화면 옵션 */
+  /* 권한 관련 옵션 */
   const [usePermissionGuide, setUsePermissionGuide] = useState(false); // 권한 안내 화면 여부
+  const [selectedScopes, setSelectedScopes] = useState([]); // 선택된 권한 목록
 
   // ----------------------
   // 핸들러
@@ -158,7 +284,12 @@ function App() {
       // 4. package.json 파일 수정
       await updatePackageJson(zip, { usePermissionGuide });
 
-      // 5. 수정된 zip 생성
+      // 5. Android / iOS 권한 파일 수정 (선택한 scopes 기반)
+      await updateAndroidManifest(zip, { selectedScopes });
+      await updateInfoPlist(zip, { selectedScopes });
+      await updatePodfile(zip, { selectedScopes });
+
+      // 6. 수정된 zip 생성
       const newZipBlob = await zip.generateAsync({ type: "blob" });
 
       // 다운로드
