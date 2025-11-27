@@ -16,6 +16,7 @@ import {
   updateAndroidManifest,
   updateInfoPlist,
   updatePodfile,
+  updatePermissionFeatureFiles,
 } from "./utils/loadAndUpdateZip";
 
 // ----------------------
@@ -87,6 +88,9 @@ function App() {
 
       // 4. package.json 파일 수정
       await updatePackageJson(zip, { usePermissionGuide, hasPermissionScopes });
+
+      // TODO: onMessage.ts, permissions.ts 파일 수정
+      await updatePermissionFeatureFiles(zip, { hasPermissionScopes });
 
       // 5. Android / iOS 권한 파일 수정 (선택한 scopes 기반)
       if (hasPermissionScopes) {

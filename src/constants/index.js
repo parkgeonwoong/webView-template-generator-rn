@@ -10,6 +10,9 @@ export const STACK_WITHOUT_PERMISSION_PATH =
 export const TARGET_STACK_PATH = "rnBaseTemplate/src/navigations/Stack.tsx";
 export const PACKAGE_JSON_PATH = "rnBaseTemplate/package.json";
 
+export const ON_MESSAGE_PATH = "rnBaseTemplate/src/handler/onMessage.ts";
+export const PERMISSIONS_UTIL_PATH = "rnBaseTemplate/src/utils/permissions.ts";
+
 export const MANIFEST_XML_PATH = "rnBaseTemplate/android/app/src/main/AndroidManifest.xml";
 export const INFO_PLIST_PATH = "rnBaseTemplate/ios/rnBaseTemplate/Info.plist";
 export const PODFILE_PATH = "rnBaseTemplate/ios/Podfile";

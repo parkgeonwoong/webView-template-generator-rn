@@ -13,9 +13,13 @@ import {
   ANDROID_PERMISSION_SNIPPETS,
   IOS_USAGE_DESCRIPTION_SNIPPETS,
   PODFILE_PERMISSION_KEYS,
+  ON_MESSAGE_PATH,
+  PERMISSIONS_UTIL_PATH,
 } from "../constants";
 
-/* 1. 기본 템플릿 ZIP 불러오기 */
+/***********************************************
+ * 1. 기본 템플릿 ZIP 불러오기
+ ***********************************************/
 export async function loadBaseTemplateZip() {
   const response = await fetch(TEMPLATE_ZIP_PATH);
   if (!response.ok) {
@@ -26,7 +30,9 @@ export async function loadBaseTemplateZip() {
   return JSZip.loadAsync(arrayBuffer);
 }
 
-/* 2. WebView 설정 파일(webview.ts) 수정 */
+/***********************************************
+ * 2. WebView 설정 파일(webview.ts) 수정
+ ***********************************************/
 export async function updateWebviewConfig(
   zip,
   { webviewUri, extraHosts, enableDebug, usePermissionGuide }
@@ -58,7 +64,9 @@ export async function updateWebviewConfig(
   zip.file(WEBVIEW_CONFIG_PATH, replacedContent);
 }
 
-/* 3. 권한 안내 화면 사용 여부에 따라 Stack 네비게이션 파일 교체 */
+/***********************************************
+ * 3. 권한 안내 화면 사용 여부에 따라 Stack 네비게이션 파일 교체
+ ***********************************************/
 export async function updateNavigationStack(zip, { usePermissionGuide }) {
   const chosenStackPath = usePermissionGuide
     ? STACK_WITH_PERMISSION_PATH
@@ -77,7 +85,9 @@ export async function updateNavigationStack(zip, { usePermissionGuide }) {
   zip.remove(STACK_WITHOUT_PERMISSION_PATH);
 }
 
-/* 4. package.json 파일 수정 */
+/***********************************************
+ * 4. package.json 파일 수정
+ ***********************************************/
 export async function updatePackageJson(zip, { usePermissionGuide, hasPermissionScopes }) {
   const packageFile = zip.file(PACKAGE_JSON_PATH); // 파일 읽기
 
@@ -97,14 +107,16 @@ export async function updatePackageJson(zip, { usePermissionGuide, hasPermission
   if (hasPermissionScopes) {
     packageJson.dependencies["react-native-permissions"] = "^5.4.2";
   } else {
-    // delete packageJson.dependencies["react-native-permissions"];
+    delete packageJson.dependencies["react-native-permissions"];
   }
 
   const newPackageContent = JSON.stringify(packageJson, null, 2);
   zip.file(PACKAGE_JSON_PATH, newPackageContent);
 }
 
-/* 5. AndroidManifest.xml 파일 수정 */
+/***********************************************
+ * 5. AndroidManifest.xml 파일 수정
+ ***********************************************/
 export async function updateAndroidManifest(zip, { selectedScopes }) {
   const file = zip.file(MANIFEST_XML_PATH);
   if (!file) return;
@@ -118,7 +130,9 @@ export async function updateAndroidManifest(zip, { selectedScopes }) {
   zip.file(MANIFEST_XML_PATH, content);
 }
 
-/* 6. Info.plist 파일 수정 */
+/***********************************************
+ * 6. Info.plist 파일 수정
+ ***********************************************/
 export async function updateInfoPlist(zip, { selectedScopes }) {
   const file = zip.file(INFO_PLIST_PATH);
   if (!file) return;
@@ -134,7 +148,9 @@ export async function updateInfoPlist(zip, { selectedScopes }) {
   zip.file(INFO_PLIST_PATH, content);
 }
 
-/* 7. Podfile 파일 수정 */
+/***********************************************
+ * 7. Podfile 파일 수정
+ ***********************************************/
 export async function updatePodfile(zip, { selectedScopes, hasPermissionScopes }) {
   const file = zip.file(PODFILE_PATH);
   if (!file) return;
@@ -152,7 +168,7 @@ export async function updatePodfile(zip, { selectedScopes, hasPermissionScopes }
   }
 
   // PERM 기능을 쓸 때만, 선택된 scopes 기반으로 setup_permissions 채우기
-  const marker = "<!-- __IOS_SETUP_PERMISSIONS__ -->";
+  const marker = "# __IOS_SETUP_PERMISSIONS__";
   const lines = selectedScopes
     .map((scope) => PODFILE_PERMISSION_KEYS[scope])
     .filter(Boolean)
@@ -162,4 +178,40 @@ export async function updatePodfile(zip, { selectedScopes, hasPermissionScopes }
   content = content.replace(marker, lines);
 
   zip.file(PODFILE_PATH, content);
+}
+
+/* 권한 기능 활성/비활성 전환 헬퍼 */
+function togglePermissionFeature(content, hasPermissionScopes) {
+  const start = "// __PERMISSIONS_FEATURE_START__";
+  const end = "// __PERMISSIONS_FEATURE_END__";
+
+  if (hasPermissionScopes) {
+    // 기능을 쓸 때는 마커만 제거하고 내용을 살림
+    return content
+      .replace(new RegExp(`${start}\\n?`, "g"), "")
+      .replace(new RegExp(`${end}\\n?`, "g"), "");
+  } else {
+    // 기능을 안 쓸 때는 마커 자체를 제거
+    const blockRegex = new RegExp(`${start}[\\s\\S]*?${end}\\n?`, "g");
+    return content.replace(blockRegex, "");
+  }
+}
+
+/***********************************************
+ * 권한 기능 파일 수정
+ ***********************************************/
+export async function updatePermissionFeatureFiles(zip, { hasPermissionScopes }) {
+  const handlerFile = zip.file(ON_MESSAGE_PATH);
+  if (handlerFile) {
+    let handlerContent = await handlerFile.async("string");
+    handlerContent = togglePermissionFeature(handlerContent, hasPermissionScopes);
+    zip.file(ON_MESSAGE_PATH, handlerContent);
+  }
+
+  // PERM 기능을 쓰지 않으면, permissions.ts 파일도 제거
+  if (!hasPermissionScopes) {
+    if (zip.file(PERMISSIONS_UTIL_PATH)) {
+      zip.remove(PERMISSIONS_UTIL_PATH);
+    }
+  }
 }
