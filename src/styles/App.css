@@ -1,6 +1,6 @@
-@import "./instruction.css";
+@import "./Instruction.css";
 @import "./Form.css";
-@import './Modal.css';
+@import "./Modal.css";
 
 @font-face {
   font-family: "Pretendard";
