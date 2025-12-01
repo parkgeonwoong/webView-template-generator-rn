@@ -15,6 +15,7 @@ import {
   PODFILE_PERMISSION_KEYS,
   ON_MESSAGE_PATH,
   PERMISSIONS_UTIL_PATH,
+  CLEAR_SITE_DATA_UTIL_PATH,
 } from "../constants";
 
 /***********************************************
@@ -180,6 +181,22 @@ export async function updatePodfile(zip, { selectedScopes, hasPermissionScopes }
   zip.file(PODFILE_PATH, content);
 }
 
+/************************************************************/
+
+// TODO: 브릿지 기능(onMessage.ts) 토글 헬퍼
+const BRIDGE_FEATURE_MARKERS = {
+  WEBVIEW_CLEAR_CACHE: {
+    start: "// __WEBVIEW_CLEAR_CACHE_FEATURE_START__",
+    end: "// __WEBVIEW_CLEAR_CACHE_FEATURE_END__",
+  },
+};
+
+// const BRIDGE_FEATURE_FILE_DEPENDENCIES = {
+//   WEBVIEW_CLEAR_CACHE: [CLEAR_SITE_DATA_UTIL_PATH],
+//   NAV: [NAV_UTIL_PATH, ...],
+//   APP: [...],
+// };
+
 /* 권한 기능 활성/비활성 전환 헬퍼 */
 function togglePermissionFeature(content, hasPermissionScopes) {
   const start = "// __PERMISSIONS_FEATURE_START__";
@@ -195,6 +212,26 @@ function togglePermissionFeature(content, hasPermissionScopes) {
     const blockRegex = new RegExp(`${start}[\\s\\S]*?${end}\\n?`, "g");
     return content.replace(blockRegex, "");
   }
+}
+
+function toggleBridgeFeatures(content, selectedBridgeFeatures) {
+  let result = content;
+  const features = selectedBridgeFeatures || [];
+
+  Object.entries(BRIDGE_FEATURE_MARKERS).forEach(([featureId, { start, end }]) => {
+    const isEnabled = features.includes(featureId);
+
+    if (isEnabled) {
+      result = result
+        .replace(new RegExp(`${start}\\n?`, "g"), "")
+        .replace(new RegExp(`${end}\\n?`, "g"), "");
+    } else {
+      const blockRegex = new RegExp(`${start}[\\s\\S]*?${end}\\n?`, "g");
+      result = result.replace(blockRegex, "");
+    }
+  });
+
+  return result;
 }
 
 /***********************************************
@@ -214,4 +251,34 @@ export async function updatePermissionFeatureFiles(zip, { hasPermissionScopes })
       zip.remove(PERMISSIONS_UTIL_PATH);
     }
   }
+}
+
+/***********************************************
+ * 브릿지 기능 파일 수정
+ ***********************************************/
+export async function updateBridgeFeatureFiles(zip, { selectedBridgeFeatures }) {
+  const handlerFile = zip.file(ON_MESSAGE_PATH);
+  if (!handlerFile) return;
+
+  let handlerContent = await handlerFile.async("string");
+  handlerContent = toggleBridgeFeatures(handlerContent, selectedBridgeFeatures);
+  zip.file(ON_MESSAGE_PATH, handlerContent);
+
+  // WEBVIEW_CLEAR_CACHE 기능을 쓰지 않으면 clearSiteData 유틸도 제거 TODO: 향후 브릿지 기능이 늘어나면 어떤블록, 어떤파일들 소유하는지를 맵으로 관리?
+  if (!selectedBridgeFeatures.includes("WEBVIEW_CLEAR_CACHE")) {
+    if (zip.file(CLEAR_SITE_DATA_UTIL_PATH)) {
+      zip.remove(CLEAR_SITE_DATA_UTIL_PATH);
+    }
+  }
+
+  // 각 기능별로 연결된 파일들도, 선택되지 않은 기능이면 제거
+  // Object.entries(BRIDGE_FEATURE_FILE_DEPENDENCIES).forEach(([featureId, paths]) => {
+  //   if (!features.includes(featureId)) {
+  //     paths.forEach((p) => {
+  //       if (zip.file(p)) {
+  //         zip.remove(p);
+  //       }
+  //     });
+  //   }
+  // });
 }

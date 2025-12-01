@@ -17,6 +17,7 @@ import {
   updateInfoPlist,
   updatePodfile,
   updatePermissionFeatureFiles,
+  updateBridgeFeatureFiles,
 } from "./utils/loadAndUpdateZip";
 
 // ----------------------
@@ -92,8 +93,11 @@ function App() {
       // 4. package.json 파일 수정
       await updatePackageJson(zip, { usePermissionGuide, hasPermissionScopes });
 
-      // TODO: onMessage.ts, permissions.ts 파일 수정
+      // PERM 기능 토글
       await updatePermissionFeatureFiles(zip, { hasPermissionScopes });
+
+      // 브릿지 기능 토글
+      await updateBridgeFeatureFiles(zip, { selectedBridgeFeatures });
 
       // 5. Android / iOS 권한 파일 수정 (선택한 scopes 기반)
       if (hasPermissionScopes) {

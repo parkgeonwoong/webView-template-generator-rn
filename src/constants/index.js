@@ -12,6 +12,7 @@ export const PACKAGE_JSON_PATH = "rnBaseTemplate/package.json";
 
 export const ON_MESSAGE_PATH = "rnBaseTemplate/src/handler/onMessage.ts";
 export const PERMISSIONS_UTIL_PATH = "rnBaseTemplate/src/utils/permissions.ts";
+export const CLEAR_SITE_DATA_UTIL_PATH = "rnBaseTemplate/src/utils/clearSiteData.ts";
 
 export const MANIFEST_XML_PATH = "rnBaseTemplate/android/app/src/main/AndroidManifest.xml";
 export const INFO_PLIST_PATH = "rnBaseTemplate/ios/rnBaseTemplate/Info.plist";
@@ -84,10 +85,10 @@ export const PERMISSION_OPTIONS = [
 
 export const BRIDGE_FEATURE_OPTIONS = [
   {
-    id: 'WEBVIEW_CLEAR_CACHE',
-    label: '웹뷰 캐시 삭제 기능',
-    description: '웹에서 CLEAR_CACHE 요청으로 네이티브 캐시 삭제를 호출할 수 있습니다.',
-    category: '브릿지 기능',
+    id: "WEBVIEW_CLEAR_CACHE",
+    label: "웹뷰 캐시 삭제 기능",
+    description: "웹에서 CLEAR_CACHE 요청으로 네이티브 캐시 삭제를 호출할 수 있습니다.",
+    category: "브릿지 기능",
   },
   // 나중에 NAV, APP, CALL 같은 것도 여기 계속 추가 가능
 ];
