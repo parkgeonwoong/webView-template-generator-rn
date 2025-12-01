@@ -52,7 +52,7 @@ export const PODFILE_PERMISSION_KEYS = {
   photos: "PhotoLibrary",
 };
 
-/* TODO: 권한 메타데이터 정의 */
+/* OS 권한 메타데이터 정의 */
 export const PERMISSION_OPTIONS = [
   {
     id: "camera",
@@ -80,4 +80,14 @@ export const PERMISSION_OPTIONS = [
   },
 
   // ⚠️ 앞으로 권한이 늘어나면 여기 배열에만 계속 추가하면 됨
+];
+
+export const BRIDGE_FEATURE_OPTIONS = [
+  {
+    id: 'WEBVIEW_CLEAR_CACHE',
+    label: '웹뷰 캐시 삭제 기능',
+    description: '웹에서 CLEAR_CACHE 요청으로 네이티브 캐시 삭제를 호출할 수 있습니다.',
+    category: '브릿지 기능',
+  },
+  // 나중에 NAV, APP, CALL 같은 것도 여기 계속 추가 가능
 ];

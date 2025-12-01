@@ -1,4 +1,32 @@
 import { useState } from "react";
+import PermissionList from "./PermissionList";
+import SelectedItemsSummary from "./SelectedItemsSummary";
+
+/* 검색 필터링 공통 함수 */
+const filterOptionsByQuery = (options, query) => {
+  if (!query) return options;
+
+  const lowerQuery = query.toLowerCase();
+
+  return options.filter((opt) => {
+    return (
+      opt.label.toLowerCase().includes(lowerQuery) ||
+      opt.id.toLowerCase().includes(lowerQuery) ||
+      (opt.category || "").toLowerCase().includes(lowerQuery)
+    );
+  });
+};
+
+/* 배열 토글을 위한 범용 함수 */
+const createToggleHandler = (selectedItems, setSelectedItems) => {
+  return (id) => {
+    if (selectedItems.includes(id)) {
+      setSelectedItems(selectedItems.filter((item) => item !== id));
+    } else {
+      setSelectedItems([...selectedItems, id]);
+    }
+  };
+};
 
 /**
  * @description 권한 선택 모달 컴포넌트
@@ -16,31 +44,28 @@ export default function PermissionSelectorModal({
   onChangeSelectedScopes,
   permissionOptions,
   permissionMap,
+  selectedBridgeFeatures,
+  onChangeSelectedBridgeFeatures,
+  bridgeFeatureOptions,
 }) {
   const [query, setQuery] = useState("");
 
   if (!open) return null;
 
-  const lowerQuery = query.toLowerCase();
+  /* 검색 필터링 - OS 권한 */
+  const filteredOptions = filterOptionsByQuery(permissionOptions, query);
 
-  /* 검색 필터링 */
-  const filteredOptions = permissionOptions.filter((opt) => {
-    if (!lowerQuery) return true;
-    return (
-      opt.label.toLowerCase().includes(lowerQuery) ||
-      opt.id.toLowerCase().includes(lowerQuery) ||
-      (opt.category || "").toLowerCase().includes(lowerQuery)
-    );
-  });
+  /* 검색 필터링 - 브릿지 기능 */
+  const filteredBridgeOptions = filterOptionsByQuery(bridgeFeatureOptions, query);
 
   /* 권한 선택 토글 */
-  const toggleScope = (id) => {
-    if (selectedScopes.includes(id)) {
-      onChangeSelectedScopes(selectedScopes.filter((s) => s !== id));
-    } else {
-      onChangeSelectedScopes([...selectedScopes, id]);
-    }
-  };
+  const toggleScope = createToggleHandler(selectedScopes, onChangeSelectedScopes);
+
+  /* 브릿지 기능 선택 토글 */
+  const toggleBridgeFeature = createToggleHandler(
+    selectedBridgeFeatures,
+    onChangeSelectedBridgeFeatures
+  );
 
   return (
     <div className="permission-modal-backdrop">
@@ -69,61 +94,49 @@ export default function PermissionSelectorModal({
             />
           </div>
 
-          {/* 권한 목록 */}
+          {/* OS 권한 섹션 */}
           <div className="permission-modal-content">
-            <ul className="permission-list">
-              {filteredOptions.map((opt) => {
-                const checked = selectedScopes.includes(opt.id);
-                return (
-                  <li
-                    key={opt.id + opt.label}
-                    className={"permission-item" + (checked ? " permission-item--selected" : "")}
-                    onClick={() => toggleScope(opt.id)}
-                  >
-                    <label className="permission-item-label-row">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        readOnly
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className="permission-item-text">
-                        <div className="permission-item-title-row">
-                          <span className="permission-item-title">{opt.label}</span>
-                          <span className="permission-item-id">({opt.id})</span>
-                        </div>
-                        <div className="permission-item-description">{opt.description}</div>
-                        {opt.category && (
-                          <span className="permission-item-category">{opt.category}</span>
-                        )}
-                      </div>
-                    </label>
-                  </li>
-                );
-              })}
-
-              {/* 검색어에 해당하는 권한이 없을 때 */}
-              {filteredOptions.length === 0 && (
-                <li className="permission-item-empty">검색어에 해당하는 권한이 없습니다.</li>
-              )}
-            </ul>
+            <div style={{ marginBottom: 24 }}>
+              <div className="permission-modal-summary-title">앱 권한 선택</div>
+              <PermissionList
+                items={filteredOptions}
+                selectedItems={selectedScopes}
+                onToggle={toggleScope}
+                emptyMessage="검색어에 해당하는 권한이 없습니다."
+              />
+            </div>
 
             {/* 선택된 권한 목록 */}
-            <div className="permission-modal-summary">
-              <div className="permission-modal-summary-title">선택된 권한</div>
-              <ul className="tag-list">
-                {selectedScopes.length === 0 ? (
-                  <li className="tag-pill tag-pill--empty">아직 선택된 권한이 없습니다.</li>
-                ) : (
-                  selectedScopes.map((id) => (
-                    <li key={id} className="tag-pill">
-                      {permissionMap[id]?.label || id}
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
+            <SelectedItemsSummary
+              title="선택된 권한"
+              selectedIds={selectedScopes}
+              getLabel={(id) => permissionMap[id]?.label || id}
+              emptyMessage="아직 선택된 권한이 없습니다."
+            />
           </div>
+
+          {/* 브릿지 기능 섹션 */}
+          {bridgeFeatureOptions.length > 0 && (
+            <div className="permission-modal-content">
+              <div>
+                <div className="permission-modal-summary-title">브릿지 기능 선택</div>
+                <PermissionList
+                  items={filteredBridgeOptions}
+                  selectedItems={selectedBridgeFeatures}
+                  onToggle={toggleBridgeFeature}
+                  emptyMessage="검색어에 해당하는 브릿지 기능이 없습니다."
+                />
+              </div>
+
+              {/* 선택된 브릿지 기능 요약 */}
+              <SelectedItemsSummary
+                title="선택된 브릿지 기능"
+                selectedIds={selectedBridgeFeatures}
+                getLabel={(id) => bridgeFeatureOptions.find((opt) => opt.id === id)?.label || id}
+                emptyMessage="아직 선택된 브릿지 기능이 없습니다."
+              />
+            </div>
+          )}
         </div>
 
         <div className="permission-modal-footer">

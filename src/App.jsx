@@ -7,7 +7,7 @@ import WebviewSettingsSection from "./components/WebviewSettingsSection";
 import DownloadInstructions from "./components/DownloadInstructions";
 import PermissionSelectorModal from "./components/modal/PermissionSelectorModal";
 
-import { PERMISSION_OPTIONS } from "./constants";
+import { PERMISSION_OPTIONS, BRIDGE_FEATURE_OPTIONS } from "./constants";
 import {
   loadBaseTemplateZip,
   updateWebviewConfig,
@@ -40,11 +40,14 @@ function App() {
 
   /* 권한 관련 옵션 */
   const [usePermissionGuide, setUsePermissionGuide] = useState(false); // 권한 안내 화면 여부
-  const [selectedScopes, setSelectedScopes] = useState([]); // 선택된 권한 목록
-
-  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
+  const [selectedScopes, setSelectedScopes] = useState([]); // 선택된 OS 권한 목록
 
   const hasPermissionScopes = selectedScopes.length > 0; // PERM 기능 활성 여부
+
+  /* 브릿지 기능 관련 옵션 */
+  const [selectedBridgeFeatures, setSelectedBridgeFeatures] = useState([]); // 선택된 브릿지 기능 목록
+
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
 
   // ----------------------
   // 핸들러
@@ -114,6 +117,24 @@ function App() {
     }
   };
 
+  /* 권한 요약 문자열 생성 */
+  const getPermissionSummary = (scopeCount, bridgeCount) => {
+    // 아무것도 선택 안 했을 때
+    if (scopeCount === 0 && bridgeCount === 0) {
+      return "선택된 권한 없음";
+    }
+
+    // 총 개수 계산
+    const totalCount = scopeCount + bridgeCount;
+
+    // 상세 정보 생성
+    const details = [];
+    if (scopeCount > 0) details.push(`OS ${scopeCount}개`);
+    if (bridgeCount > 0) details.push(`브릿지 ${bridgeCount}개`);
+
+    return `${totalCount}개 선택됨 (${details.join(", ")})`;
+  };
+
   return (
     <>
       <div className="App">
@@ -170,22 +191,33 @@ function App() {
                 </button>
 
                 <span className="form-inline-summary">
-                  {selectedScopes.length === 0
-                    ? "선택된 권한 없음"
-                    : `${selectedScopes.length}개 권한 선택됨`}
+                  {getPermissionSummary(selectedScopes.length, selectedBridgeFeatures.length)}
                 </span>
               </div>
 
               {/* 선택된 권한 목록 */}
               <ul className="tag-list">
-                {selectedScopes.length === 0 ? (
+                {selectedScopes.length === 0 && selectedBridgeFeatures.length === 0 ? (
                   <li className="tag-pill tag-pill--empty">아직 선택된 권한이 없습니다.</li>
                 ) : (
-                  selectedScopes.map((id) => (
-                    <li key={id} className="tag-pill">
-                      {PERMISSION_MAP[id]?.label || id}
-                    </li>
-                  ))
+                  <>
+                    {/* OS 권한 표시 */}
+                    {selectedScopes.map((id) => (
+                      <li key={`scope-${id}`} className="tag-pill">
+                        {PERMISSION_MAP[id]?.label || id}
+                      </li>
+                    ))}
+
+                    {/* 브릿지 기능 표시 */}
+                    {selectedBridgeFeatures.map((id) => {
+                      const feature = BRIDGE_FEATURE_OPTIONS.find((opt) => opt.id === id);
+                      return (
+                        <li key={`bridge-${id}`} className="tag-pill">
+                          {feature?.label || id}
+                        </li>
+                      );
+                    })}
+                  </>
                 )}
               </ul>
             </div>
@@ -211,6 +243,9 @@ function App() {
         onChangeSelectedScopes={setSelectedScopes}
         permissionOptions={PERMISSION_OPTIONS}
         permissionMap={PERMISSION_MAP}
+        selectedBridgeFeatures={selectedBridgeFeatures}
+        onChangeSelectedBridgeFeatures={setSelectedBridgeFeatures}
+        bridgeFeatureOptions={BRIDGE_FEATURE_OPTIONS}
       />
     </>
   );
