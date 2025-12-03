@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { saveAs } from "file-saver";
 
 import "./styles/App.css";
@@ -55,7 +55,7 @@ function App() {
   // ----------------------
 
   /* 추가 허용 도메인 추가 */
-  const handleAddHost = () => {
+  const handleAddHost = useCallback(() => {
     const value = extraHostInput.trim();
     if (!value) return;
 
@@ -67,12 +67,12 @@ function App() {
 
     setExtraHosts([...extraHosts, value]);
     setExtraHostInput("");
-  };
+  }, [extraHostInput, extraHosts]);
 
   /* 추가 허용 도메인 삭제 */
-  const handleRemoveHost = (hostToRemove) => {
+  const handleRemoveHost = useCallback((hostToRemove) => {
     setExtraHosts((prev) => prev.filter((host) => host !== hostToRemove));
-  };
+  }, []);
 
   /* 템플릿 ZIP 생성 & 다운로드 */
   const downloadTemplate = async () => {

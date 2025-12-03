@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 /**
  * @description 웹뷰 설정 카드 컴포넌트
  * @param webviewUri - 웹뷰 URL
@@ -11,7 +13,7 @@
  * @param onChangeEnableDebug - 디버깅 여부 변경 핸들러
  */
 
-export default function WebviewSettingsSection({
+export default memo(function WebviewSettingsSection({
   webviewUri,
   onChangeWebviewUri,
   extraHostInput,
@@ -59,6 +61,7 @@ export default function WebviewSettingsSection({
             </button>
           </div>
 
+          {/* 추가 허용 도메인 목록 */}
           {extraHosts.length > 0 && (
             <ul className="tag-list">
               {extraHosts.map((host) => (
@@ -97,4 +100,4 @@ export default function WebviewSettingsSection({
       </div>
     </section>
   );
-}
+});
