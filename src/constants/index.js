@@ -83,24 +83,37 @@ export const PERMISSION_OPTIONS = [
   // ⚠️ 앞으로 권한이 늘어나면 여기 배열에만 계속 추가하면 됨
 ];
 
+/* 브릿지 기능 옵션 (웹 선택기능) */
 export const BRIDGE_FEATURE_OPTIONS = [
   {
     id: "WEBVIEW_CLEAR_CACHE",
     label: "웹뷰 캐시 삭제 기능",
     description: "웹에서 CLEAR_CACHE 요청으로 네이티브 캐시 삭제를 호출할 수 있습니다.",
-    category: "브릿지 기능",
+    category: "WebView 기능",
   },
   {
     id: "NAV_GO_BACK",
-    label: "웹뷰 내 뒤로가기 (GO_BACK)",
+    label: "웹뷰 내 뒤로가기",
     description: "type: 'NAV', action: 'GO_BACK' 으로 WebView 뒤로가기를 호출합니다.",
     category: "네비게이션",
   },
   {
     id: "NAV_TO_TMP",
-    label: "임시 페이지 이동 (TO_TMP)",
+    label: "임시 페이지 이동",
     description: "type: 'NAV', action: 'TO_TMP' 으로 'Tmp' 스택 화면으로 이동합니다.",
     category: "네비게이션",
+  },
+  {
+    id: "APP_OPEN_URL",
+    label: "외부 앱 실행",
+    description: "type: 'APP', action: 'OPEN_URL', payload: { url } 로 외부 브라우저/앱을 엽니다.",
+    category: "앱 기능",
+  },
+  {
+    id: "APP_GET_VERSION",
+    label: "앱 버전 조회",
+    description: "type: 'APP', action: 'GET_VERSION' 으로 네이티브 앱 버전 정보를 조회합니다.",
+    category: "앱 기능",
   },
   // 나중에 NAV, APP, CALL 같은 것도 여기 계속 추가 가능
 ];

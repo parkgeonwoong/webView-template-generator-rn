@@ -91,7 +91,11 @@ function App() {
       await updateNavigationStack(zip, { usePermissionGuide });
 
       // 4. package.json 파일 수정
-      await updatePackageJson(zip, { usePermissionGuide, hasPermissionScopes });
+      await updatePackageJson(zip, {
+        usePermissionGuide,
+        hasPermissionScopes,
+        selectedBridgeFeatures,
+      });
 
       // PERM 기능 토글
       await updatePermissionFeatureFiles(zip, { hasPermissionScopes });

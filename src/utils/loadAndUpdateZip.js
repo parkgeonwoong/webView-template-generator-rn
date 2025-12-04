@@ -89,13 +89,18 @@ export async function updateNavigationStack(zip, { usePermissionGuide }) {
 /***********************************************
  * 4. package.json 파일 수정
  ***********************************************/
-export async function updatePackageJson(zip, { usePermissionGuide, hasPermissionScopes }) {
+export async function updatePackageJson(
+  zip,
+  { usePermissionGuide, hasPermissionScopes, selectedBridgeFeatures = [] }
+) {
   const packageFile = zip.file(PACKAGE_JSON_PATH); // 파일 읽기
 
   if (!packageFile) return;
 
   const packageContent = await packageFile.async("string"); // 실제 텍스트 내용
   const packageJson = JSON.parse(packageContent);
+
+  const hasAppVersionFeature = selectedBridgeFeatures.includes("APP_GET_VERSION");
 
   // 권한안내 화면 옵션
   if (usePermissionGuide) {
@@ -109,6 +114,13 @@ export async function updatePackageJson(zip, { usePermissionGuide, hasPermission
     packageJson.dependencies["react-native-permissions"] = "^5.4.2";
   } else {
     delete packageJson.dependencies["react-native-permissions"];
+  }
+
+  // APP_GET_VERSION 기능을 쓰지 않으면 react-native-device-info 제거 TODO: 향후 브릿지 기능이 늘어나면 어떻게 할지?
+  if (hasAppVersionFeature) {
+    packageJson.dependencies["react-native-device-info"] = "^14.0.4";
+  } else {
+    delete packageJson.dependencies["react-native-device-info"];
   }
 
   const newPackageContent = JSON.stringify(packageJson, null, 2);
@@ -183,7 +195,11 @@ export async function updatePodfile(zip, { selectedScopes, hasPermissionScopes }
 
 /************************************************************/
 
-// TODO: 브릿지 기능(onMessage.ts) 토글 헬퍼
+/******************************************************
+ * 브릿지 템플릿 토글용 내부 상수
+ * - (onMessage.ts 안의 주석 마커 문자열)
+ * - 제너레이터가 템플릿 코드를 어떻게 토글할지
+ ******************************************************/
 const BRIDGE_FEATURE_MARKERS = {
   WEBVIEW_CLEAR_CACHE: {
     start: "// __WEBVIEW_CLEAR_CACHE_FEATURE_START__",
@@ -201,7 +217,31 @@ const BRIDGE_FEATURE_MARKERS = {
     start: "// __NAV_TO_TMP_FEATURE_START__",
     end: "// __NAV_TO_TMP_FEATURE_END__",
   },
+  APP_FEATURE_WRAPPER: {
+    start: "// __APP_FEATURE_WRAPPER_START__",
+    end: "// __APP_FEATURE_WRAPPER_END__",
+  },
+  APP_OPEN_URL: {
+    start: "// __APP_OPEN_URL_FEATURE_START__",
+    end: "// __APP_OPEN_URL_FEATURE_END__",
+  },
+  APP_GET_VERSION: {
+    start: "// __APP_GET_VERSION_FEATURE_START__",
+    end: "// __APP_GET_VERSION_FEATURE_END__",
+  },
 };
+
+/* 브릿지 기능 랩퍼 규칙 */
+const BRIDGE_WRAPPER_RULES = [
+  {
+    wrapperId: "NAV_FEATURE_WRAPPER",
+    match: (id) => id.startsWith("NAV_"),
+  },
+  {
+    wrapperId: "APP_FEATURE_WRAPPER",
+    match: (id) => id.startsWith("APP_"),
+  },
+];
 
 // const BRIDGE_FEATURE_FILE_DEPENDENCIES = {
 //   WEBVIEW_CLEAR_CACHE: [CLEAR_SITE_DATA_UTIL_PATH],
@@ -230,14 +270,21 @@ function togglePermissionFeature(content, hasPermissionScopes) {
 function toggleBridgeFeatures(content, selectedBridgeFeatures) {
   const base = selectedBridgeFeatures || [];
 
-  // 네비 관련 옵션이 하나라도 있으면 NAV_FEATURE_WRAPPER 기능도 활성화
-  const hasNavFeature = base.some((id) => id.startsWith("NAV_"));
-  const features = hasNavFeature ? [...base, "NAV_FEATURE_WRAPPER"] : base;
+  // 래퍼 규칙 적용
+  const featuresSet = new Set(base);
+  BRIDGE_WRAPPER_RULES.forEach(({ wrapperId, match }) => {
+    if (base.some(match)) {
+      featuresSet.add(wrapperId);
+    }
+  });
+
+  const features = Array.from(featuresSet);
 
   let result = content;
 
-  Object.entries(BRIDGE_FEATURE_MARKERS).forEach(([featureId, { start, end }]) => {
-    const isEnabled = features.includes(featureId);
+  // 각 브릿지 기능별로 주석 마커 처리
+  Object.entries(BRIDGE_FEATURE_MARKERS).forEach(([featureMarkerName, { start, end }]) => {
+    const isEnabled = features.includes(featureMarkerName);
 
     if (isEnabled) {
       result = result
@@ -282,7 +329,7 @@ export async function updateBridgeFeatureFiles(zip, { selectedBridgeFeatures }) 
   handlerContent = toggleBridgeFeatures(handlerContent, selectedBridgeFeatures);
   zip.file(ON_MESSAGE_PATH, handlerContent);
 
-  // WEBVIEW_CLEAR_CACHE 기능을 쓰지 않으면 clearSiteData 유틸도 제거 TODO: 향후 브릿지 기능이 늘어나면 어떤블록, 어떤파일들 소유하는지를 맵으로 관리?
+  // WEBVIEW_CLEAR_CACHE 기능을 쓰지 않으면 clearSiteData 유틸도 제거 TODO: 향후 브릿지 기능 파일이 늘어나면 제거할 파일들은?
   if (!selectedBridgeFeatures.includes("WEBVIEW_CLEAR_CACHE")) {
     if (zip.file(CLEAR_SITE_DATA_UTIL_PATH)) {
       zip.remove(CLEAR_SITE_DATA_UTIL_PATH);
