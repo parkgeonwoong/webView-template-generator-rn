@@ -16,7 +16,7 @@ import {
   ON_MESSAGE_PATH,
   PERMISSIONS_UTIL_PATH,
   CLEAR_SITE_DATA_UTIL_PATH,
-} from "../constants";
+} from "../../../shared/constants";
 
 /***********************************************
  * 1. 기본 템플릿 ZIP 불러오기

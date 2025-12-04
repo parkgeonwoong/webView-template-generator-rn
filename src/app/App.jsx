@@ -1,13 +1,16 @@
 import { useCallback, useState } from "react";
 import { saveAs } from "file-saver";
 
-import "./styles/App.css";
+import "./App.css";
 
-import WebviewSettingsSection from "./components/WebviewSettingsSection";
-import DownloadInstructions from "./components/DownloadInstructions";
-import PermissionSelectorModal from "./components/modal/PermissionSelectorModal";
+import { WebviewSettingsSection } from "../features/webview-settings";
+import { DownloadInstructions } from "../features/template-generator";
+import {
+  PermissionSelectorModal,
+  BRIDGE_FEATURE_OPTIONS,
+  PERMISSION_OPTIONS,
+} from "../features/permission";
 
-import { PERMISSION_OPTIONS, BRIDGE_FEATURE_OPTIONS } from "./constants";
 import {
   loadBaseTemplateZip,
   updateWebviewConfig,
@@ -18,7 +21,7 @@ import {
   updatePodfile,
   updatePermissionFeatureFiles,
   updateBridgeFeatureFiles,
-} from "./utils/loadAndUpdateZip";
+} from "../features/template-generator";
 
 // ----------------------
 // 템플릿 관련 상수 & 헬퍼

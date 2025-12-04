@@ -2,6 +2,8 @@ import { useState } from "react";
 import PermissionList from "./PermissionList";
 import SelectedItemsSummary from "./SelectedItemsSummary";
 
+import "../styles/Modal.css";
+
 /* 검색 필터링 공통 함수 */
 const filterOptionsByQuery = (options, query) => {
   if (!query) return options;

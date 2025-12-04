@@ -4,6 +4,8 @@
 
 import { memo } from "react";
 
+import "../styles/Instruction.css";
+
 function DownloadInstructions() {
   return (
     <div className="download-instructions">

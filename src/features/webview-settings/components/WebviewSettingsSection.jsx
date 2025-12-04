@@ -1,5 +1,7 @@
 import { memo } from "react";
 
+import "../styles/WebviewSettingsSection.css";
+
 /**
  * @description 웹뷰 설정 카드 컴포넌트
  * @param webviewUri - 웹뷰 URL
