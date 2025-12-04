@@ -189,6 +189,18 @@ const BRIDGE_FEATURE_MARKERS = {
     start: "// __WEBVIEW_CLEAR_CACHE_FEATURE_START__",
     end: "// __WEBVIEW_CLEAR_CACHE_FEATURE_END__",
   },
+  NAV_FEATURE_WRAPPER: {
+    start: "// __NAV_FEATURE_WRAPPER_START__",
+    end: "// __NAV_FEATURE_WRAPPER_END__",
+  },
+  NAV_GO_BACK: {
+    start: "// __NAV_GO_BACK_FEATURE_START__",
+    end: "// __NAV_GO_BACK_FEATURE_END__",
+  },
+  NAV_TO_TMP: {
+    start: "// __NAV_TO_TMP_FEATURE_START__",
+    end: "// __NAV_TO_TMP_FEATURE_END__",
+  },
 };
 
 // const BRIDGE_FEATURE_FILE_DEPENDENCIES = {
@@ -214,9 +226,15 @@ function togglePermissionFeature(content, hasPermissionScopes) {
   }
 }
 
+/* TODO: 브릿지 기능 활성/비활성 전환 헬퍼 */
 function toggleBridgeFeatures(content, selectedBridgeFeatures) {
+  const base = selectedBridgeFeatures || [];
+
+  // 네비 관련 옵션이 하나라도 있으면 NAV_FEATURE_WRAPPER 기능도 활성화
+  const hasNavFeature = base.some((id) => id.startsWith("NAV_"));
+  const features = hasNavFeature ? [...base, "NAV_FEATURE_WRAPPER"] : base;
+
   let result = content;
-  const features = selectedBridgeFeatures || [];
 
   Object.entries(BRIDGE_FEATURE_MARKERS).forEach(([featureId, { start, end }]) => {
     const isEnabled = features.includes(featureId);

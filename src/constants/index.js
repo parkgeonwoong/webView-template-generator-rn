@@ -90,5 +90,17 @@ export const BRIDGE_FEATURE_OPTIONS = [
     description: "웹에서 CLEAR_CACHE 요청으로 네이티브 캐시 삭제를 호출할 수 있습니다.",
     category: "브릿지 기능",
   },
+  {
+    id: "NAV_GO_BACK",
+    label: "웹뷰 내 뒤로가기 (GO_BACK)",
+    description: "type: 'NAV', action: 'GO_BACK' 으로 WebView 뒤로가기를 호출합니다.",
+    category: "네비게이션",
+  },
+  {
+    id: "NAV_TO_TMP",
+    label: "임시 페이지 이동 (TO_TMP)",
+    description: "type: 'NAV', action: 'TO_TMP' 으로 'Tmp' 스택 화면으로 이동합니다.",
+    category: "네비게이션",
+  },
   // 나중에 NAV, APP, CALL 같은 것도 여기 계속 추가 가능
 ];
