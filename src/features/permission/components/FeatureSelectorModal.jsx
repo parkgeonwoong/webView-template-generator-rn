@@ -1,6 +1,5 @@
 import { useState } from "react";
-import PermissionList from "./PermissionList";
-import SelectedItemsSummary from "./SelectedItemsSummary";
+import FeaturesSection from "./modal/FeaturesSection";
 
 import "../styles/Modal.css";
 
@@ -31,7 +30,7 @@ const createToggleHandler = (selectedItems, setSelectedItems) => {
 };
 
 /**
- * @description 권한 선택 모달 컴포넌트
+ * @description 권한 기능 선택 모달 컴포넌트
  * @param open 모달 열림 여부
  * @param onClose 모달 닫기 핸들러
  * @param selectedScopes 선택된 권한 목록
@@ -39,7 +38,7 @@ const createToggleHandler = (selectedItems, setSelectedItems) => {
  * @param permissionOptions 권한 옵션 목록
  * @param permissionMap 권한 id → 메타데이터 빠른 조회용
  */
-export default function PermissionSelectorModal({
+export default function FeatureSelectorModal({
   open,
   onClose,
   selectedScopes,
@@ -97,48 +96,22 @@ export default function PermissionSelectorModal({
           </div>
 
           {/* OS 권한 섹션 */}
-          <div className="permission-modal-content">
-            <div style={{ marginBottom: 24 }}>
-              <div className="permission-modal-summary-title">앱 권한 선택</div>
-              <PermissionList
-                items={filteredOptions}
-                selectedItems={selectedScopes}
-                onToggle={toggleScope}
-                emptyMessage="검색어에 해당하는 권한이 없습니다."
-              />
-            </div>
-
-            {/* 선택된 권한 목록 */}
-            <SelectedItemsSummary
-              title="선택된 권한"
-              selectedIds={selectedScopes}
-              getLabel={(id) => permissionMap[id]?.label || id}
-              emptyMessage="아직 선택된 권한이 없습니다."
-            />
-          </div>
+          <FeaturesSection
+            title="앱 권한 선택"
+            items={filteredOptions}
+            selectedScopes={selectedScopes}
+            toggleScope={toggleScope}
+            getLabel={(id) => permissionMap[id]?.label || id}
+          />
 
           {/* 브릿지 기능 섹션 */}
-          {bridgeFeatureOptions.length > 0 && (
-            <div className="permission-modal-content">
-              <div>
-                <div className="permission-modal-summary-title">브릿지 기능 선택</div>
-                <PermissionList
-                  items={filteredBridgeOptions}
-                  selectedItems={selectedBridgeFeatures}
-                  onToggle={toggleBridgeFeature}
-                  emptyMessage="검색어에 해당하는 브릿지 기능이 없습니다."
-                />
-              </div>
-
-              {/* 선택된 브릿지 기능 요약 */}
-              <SelectedItemsSummary
-                title="선택된 브릿지 기능"
-                selectedIds={selectedBridgeFeatures}
-                getLabel={(id) => bridgeFeatureOptions.find((opt) => opt.id === id)?.label || id}
-                emptyMessage="아직 선택된 브릿지 기능이 없습니다."
-              />
-            </div>
-          )}
+          <FeaturesSection
+            title="브릿지 기능 선택"
+            items={filteredBridgeOptions}
+            selectedScopes={selectedBridgeFeatures}
+            toggleScope={toggleBridgeFeature}
+            getLabel={(id) => bridgeFeatureOptions.find((opt) => opt.id === id)?.label || id}
+          />
         </div>
 
         <div className="permission-modal-footer">

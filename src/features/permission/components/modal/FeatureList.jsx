@@ -1,11 +1,12 @@
+import { memo } from "react";
+
 /**
  * @description 권한/브릿지 기능 목록을 표시하는 재사용 가능한 컴포넌트
  * @param items 표시할 항목 목록 (필터링된 상태)
  * @param selectedItems 선택된 항목 ID 배열
  * @param onToggle 항목 토글 핸들러
- * @param emptyMessage 항목이 없을 때 표시할 메시지
  */
-export default function PermissionList({ items, selectedItems, onToggle, emptyMessage }) {
+export default memo(function FeatureList({ items, selectedItems, onToggle }) {
   return (
     <ul className="permission-list">
       {items.map((opt) => {
@@ -38,8 +39,10 @@ export default function PermissionList({ items, selectedItems, onToggle, emptyMe
         );
       })}
 
-      {/* 검색어에 해당하는 권한이 없을 때 */}
-      {items.length === 0 && <li className="permission-item-empty">{emptyMessage}</li>}
+      {/* 검색어에 해당하는 기능이 없을 때 */}
+      {items.length === 0 && (
+        <li className="permission-item-empty">검색어에 해당하는 기능이 없습니다.</li>
+      )}
     </ul>
   );
-}
+});
