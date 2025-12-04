@@ -40,6 +40,10 @@
      - [x] androidManifest.xml: selectedScopes 기반 `<uses-permission>` 치환
      - [x] info.plist: selectedScopes 기반 `<key>` 치환
      - [x] Podfile: RNPermissions setup 블록 옵션화 (`# __PERMISSIONS_SETUP_START/END__`, `# __IOS_SETUP_PERMISSIONS__` 치환)
+   - 브릿지 기능 추가
+     - [x] onMessage.ts 브릿지 기능 옵션화 (`// __BRIDGE_FEATURE_START/END__`)
+     - [x] APP 브릿지(`OPEN_URL`, `GET_VERSION`) 핸들러 추가 및 feature block(`__APP_*__`) 기반 옵션화
+     - [x] APP_GET_VERSION 미사용 시 DeviceInfo 코드/의존성 제거 가능하도록 마커 적용
 
 **웹 제너레이터 작업**
 
@@ -58,6 +62,7 @@
    - [x] ALLOW_HOSTS 삭제 버튼 추가
 
 2. 앱 권한 관련 옵션 추가
+
    - 네비게이션 Stack 파일 치환
      - [x] Stack.with-permission.tsx / Stack.without-permission.tsx 중 선택
      - [x] 최종 ZIP 에서는 두 템플릿 파일 제거, Stack.tsx 만 남기기
@@ -66,6 +71,22 @@
      - [x] 권한안내 화면 옵션 OFF 시 AsyncStorage 의존성 제거 (버전 분리 기반으로 안전하게)
    - [x] 앱 최초 실행 시 권한 안내 화면 옵션 UI (체크박스) 및 상태(usePermissionGuide) 연동
    - [x] 앱 권한 선택 UI (모달 + PERMISSION_OPTIONS) 및 PERM 옵션(hasPermissionScopes) 연동
+   - FeatureSelectorModal 컴포넌트 리팩토링
+     - [x] 중복 코드 제거 (검색 필터링, 토글 함수, 권한 목록 렌더링, 선택 요약 → 4개 영역 약 100줄 중복 제거)
+   - App.jsx 권한 요약 표시 개선
+     - [x] 브릿지 기능 카운트 포함 (기존: OS 권한만 → 개선: OS 권한 + 브릿지 기능 통합 표시)
+   - 브릿지 기능 옵션 및 라이브러리 연동
+     - [x] 브릿지 기능 메타데이터(BRIDGE_FEATURE_OPTIONS) 정의 및 UI/상태
+     - [x] onMessage.ts 브릿지 마커 기반 선택된 기능만 코드/파일 유지 (`toggleBridgeFeatures`)
+     - [x] APP_GET_VERSION 선택 여부에 따라 `react-native-device-info` 의존성 자동 추가/제거
+
+3. 폴더/코드 구조 리팩토링
+
+   - [x] 기능 단위(feature-first) 폴더 구조로 개편  
+          (`src/app`, `src/features/permission`, `src/features/webview-settings` 등으로 역할별 분리)
+   - [x] 권한/브릿지 선택 모달 컴포넌트 구조 개선
+     - `FeatureSelectorModal` 로 명명 정리 및 permission feature 모듈 내부로 이동
+     - 리스트/요약 UI를 `FeatureList`, `FeaturesSection`, `SelectedItemsSummary` 등으로 분리
 
 </details>
 
