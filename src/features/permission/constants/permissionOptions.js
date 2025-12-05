@@ -66,6 +66,19 @@ export const BRIDGE_FEATURE_OPTIONS = [
     description: "웹에서 CALL 브릿지 요청으로 전화, 문자, 이메일을 호출할 수 있습니다.",
     category: "통화/메시징",
   },
+  {
+    id: "MEDIA_KEYBOARD",
+    label: "키보드 기능",
+    description:
+      "type: 'MEDIA', action: 'KEYBOARD_SHOW', payload: { selector } 으로 키보드를 보여주고, type: 'MEDIA', action: 'KEYBOARD_HIDE' 으로 키보드를 숨깁니다.",
+    category: "미디어",
+  },
+  {
+    id: "MEDIA_VOLUME",
+    label: "볼륨 기능",
+    description: "type: 'MEDIA', action: 'CHANGE_VOLUME' 으로 볼륨을 변경합니다.",
+    category: "미디어",
+  },
 
   // 나중에 NAV, APP, CALL 같은 것도 여기 계속 추가 가능
 ];

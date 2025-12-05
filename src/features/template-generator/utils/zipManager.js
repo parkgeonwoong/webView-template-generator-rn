@@ -16,6 +16,7 @@ import {
   ON_MESSAGE_PATH,
   PERMISSIONS_UTIL_PATH,
   CLEAR_SITE_DATA_UTIL_PATH,
+  KEYBOARD_UTIL_PATH,
 } from "../../../shared/constants";
 
 /***********************************************
@@ -86,6 +87,30 @@ export async function updateNavigationStack(zip, { usePermissionGuide }) {
   zip.remove(STACK_WITHOUT_PERMISSION_PATH);
 }
 
+/* package.json 의 dependencies를 기능 플래그로 제어하기 위한 설정 테이블 */
+const PACKAGE_FEATURE_CONFIG = [
+  {
+    enabled: (opts) => opts.usePermissionGuide,
+    pkg: "@react-native-async-storage/async-storage",
+    version: "^1.24.0",
+  },
+  {
+    enabled: (opts) => opts.hasPermissionScopes,
+    pkg: "react-native-permissions",
+    version: "^5.4.2",
+  },
+  {
+    enabled: (opts) => opts.selectedBridgeFeatures.includes("APP_GET_VERSION"),
+    pkg: "react-native-device-info",
+    version: "^14.0.4",
+  },
+  {
+    enabled: (opts) => opts.selectedBridgeFeatures.includes("MEDIA_VOLUME"),
+    pkg: "react-native-volume-manager",
+    version: "^2.0.8",
+  },
+];
+
 /***********************************************
  * 4. package.json 파일 수정
  ***********************************************/
@@ -100,28 +125,16 @@ export async function updatePackageJson(
   const packageContent = await packageFile.async("string"); // 실제 텍스트 내용
   const packageJson = JSON.parse(packageContent);
 
-  const hasAppVersionFeature = selectedBridgeFeatures.includes("APP_GET_VERSION");
+  const options = { usePermissionGuide, hasPermissionScopes, selectedBridgeFeatures };
 
-  // 권한안내 화면 옵션
-  if (usePermissionGuide) {
-    packageJson.dependencies["@react-native-async-storage/async-storage"] = "^1.24.0";
-  } else {
-    delete packageJson.dependencies["@react-native-async-storage/async-storage"];
-  }
-
-  // PERM 기능
-  if (hasPermissionScopes) {
-    packageJson.dependencies["react-native-permissions"] = "^5.4.2";
-  } else {
-    delete packageJson.dependencies["react-native-permissions"];
-  }
-
-  // APP_GET_VERSION 기능을 쓰지 않으면 react-native-device-info 제거 TODO: 향후 브릿지 기능이 늘어나면 어떻게 할지?
-  if (hasAppVersionFeature) {
-    packageJson.dependencies["react-native-device-info"] = "^14.0.4";
-  } else {
-    delete packageJson.dependencies["react-native-device-info"];
-  }
+  // 설정 테이블 기반으로 dependency 의존성 ON/OFF 처리
+  PACKAGE_FEATURE_CONFIG.forEach(({ enabled, pkg, version }) => {
+    if (enabled(options)) {
+      packageJson.dependencies[pkg] = version;
+    } else {
+      delete packageJson.dependencies[pkg];
+    }
+  });
 
   const newPackageContent = JSON.stringify(packageJson, null, 2);
   zip.file(PACKAGE_JSON_PATH, newPackageContent);
@@ -233,6 +246,18 @@ const BRIDGE_FEATURE_MARKERS = {
     start: "// __CALL_FEATURE_WRAPPER_START__",
     end: "// __CALL_FEATURE_WRAPPER_END__",
   },
+  MEDIA_FEATURE_WRAPPER: {
+    start: "// __MEDIA_FEATURE_WRAPPER_START__",
+    end: "// __MEDIA_FEATURE_WRAPPER_END__",
+  },
+  MEDIA_KEYBOARD: {
+    start: "// __MEDIA_KEYBOARD_FEATURE_START__",
+    end: "// __MEDIA_KEYBOARD_FEATURE_END__",
+  },
+  MEDIA_VOLUME: {
+    start: "// __MEDIA_VOLUME_FEATURE_START__",
+    end: "// __MEDIA_VOLUME_FEATURE_END__",
+  },
 };
 
 /* 브릿지 기능 랩퍼 규칙 */
@@ -249,8 +274,13 @@ const BRIDGE_WRAPPER_RULES = [
     wrapperId: "CALL_FEATURE_WRAPPER",
     match: (id) => id.startsWith("CALL_"),
   },
+  {
+    wrapperId: "MEDIA_FEATURE_WRAPPER",
+    match: (id) => id.startsWith("MEDIA_"),
+  },
 ];
 
+// 빈 줄 정규화 헬퍼
 function normalizeEmptyLines(text) {
   return text.replace(/(\r?\n){2,}/g, "\r\n\r\n");
 }
@@ -276,7 +306,7 @@ function togglePermissionFeature(content, hasPermissionScopes) {
 function toggleBridgeFeatures(content, selectedBridgeFeatures) {
   const base = selectedBridgeFeatures || [];
 
-  // 래퍼 규칙 적용
+  // 래퍼 규칙 적용 (래퍼 규칙: 브릿지 기능이 활성화되면, 해당 기능을 감싸는 래퍼 파일도 활성화되어야 함)
   const featuresSet = new Set(base);
   BRIDGE_WRAPPER_RULES.forEach(({ wrapperId, match }) => {
     if (base.some(match)) {
@@ -339,6 +369,12 @@ export async function updateBridgeFeatureFiles(zip, { selectedBridgeFeatures }) 
   if (!selectedBridgeFeatures.includes("WEBVIEW_CLEAR_CACHE")) {
     if (zip.file(CLEAR_SITE_DATA_UTIL_PATH)) {
       zip.remove(CLEAR_SITE_DATA_UTIL_PATH);
+    }
+  }
+
+  if (!selectedBridgeFeatures.includes("MEDIA_KEYBOARD")) {
+    if (zip.file(KEYBOARD_UTIL_PATH)) {
+      zip.remove(KEYBOARD_UTIL_PATH);
     }
   }
 

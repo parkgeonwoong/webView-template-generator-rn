@@ -13,6 +13,7 @@ export const PACKAGE_JSON_PATH = "rnBaseTemplate/package.json";
 export const ON_MESSAGE_PATH = "rnBaseTemplate/src/handler/onMessage.ts";
 export const PERMISSIONS_UTIL_PATH = "rnBaseTemplate/src/utils/permissions.ts";
 export const CLEAR_SITE_DATA_UTIL_PATH = "rnBaseTemplate/src/utils/clearSiteData.ts";
+export const KEYBOARD_UTIL_PATH = "rnBaseTemplate/src/utils/keyboard.ts";
 
 export const MANIFEST_XML_PATH = "rnBaseTemplate/android/app/src/main/AndroidManifest.xml";
 export const INFO_PLIST_PATH = "rnBaseTemplate/ios/rnBaseTemplate/Info.plist";
