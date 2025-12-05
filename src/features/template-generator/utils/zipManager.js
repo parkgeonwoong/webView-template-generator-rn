@@ -229,6 +229,10 @@ const BRIDGE_FEATURE_MARKERS = {
     start: "// __APP_GET_VERSION_FEATURE_START__",
     end: "// __APP_GET_VERSION_FEATURE_END__",
   },
+  CALL_FEATURE_WRAPPER: {
+    start: "// __CALL_FEATURE_WRAPPER_START__",
+    end: "// __CALL_FEATURE_WRAPPER_END__",
+  },
 };
 
 /* 브릿지 기능 랩퍼 규칙 */
@@ -241,13 +245,15 @@ const BRIDGE_WRAPPER_RULES = [
     wrapperId: "APP_FEATURE_WRAPPER",
     match: (id) => id.startsWith("APP_"),
   },
+  {
+    wrapperId: "CALL_FEATURE_WRAPPER",
+    match: (id) => id.startsWith("CALL_"),
+  },
 ];
 
-// const BRIDGE_FEATURE_FILE_DEPENDENCIES = {
-//   WEBVIEW_CLEAR_CACHE: [CLEAR_SITE_DATA_UTIL_PATH],
-//   NAV: [NAV_UTIL_PATH, ...],
-//   APP: [...],
-// };
+function normalizeEmptyLines(text) {
+  return text.replace(/(\r?\n){2,}/g, "\r\n\r\n");
+}
 
 /* 권한 기능 활성/비활성 전환 헬퍼 */
 function togglePermissionFeature(content, hasPermissionScopes) {
@@ -296,7 +302,7 @@ function toggleBridgeFeatures(content, selectedBridgeFeatures) {
     }
   });
 
-  return result;
+  return normalizeEmptyLines(result);
 }
 
 /***********************************************

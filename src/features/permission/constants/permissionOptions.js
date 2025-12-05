@@ -60,5 +60,12 @@ export const BRIDGE_FEATURE_OPTIONS = [
     description: "type: 'APP', action: 'GET_VERSION' 으로 네이티브 앱 버전 정보를 조회합니다.",
     category: "앱 기능",
   },
+  {
+    id: "CALL_PHONE_SMS_EMAIL",
+    label: "전화, 문자, 이메일 기능",
+    description: "웹에서 CALL 브릿지 요청으로 전화, 문자, 이메일을 호출할 수 있습니다.",
+    category: "통화/메시징",
+  },
+
   // 나중에 NAV, APP, CALL 같은 것도 여기 계속 추가 가능
 ];
